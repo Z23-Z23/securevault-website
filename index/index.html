@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureVault - 您的本地文件保险库</title>
+    <meta name="description" content="基于 AES-256-GCM 军事级加密的本地文件保管工具。无需联网，绝对隐私。">
+    <style>
+        /* ================= 全局变量与重置 ================= */
+        :root {
+            --bg-base: #0d1117;
+            --bg-surface: #161b22;
+            --bg-card: #1c2128;
+            --border: #30363d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --primary: #58a6ff;
+            --primary-hover: #79c0ff;
+            --success: #238636;
+            --success-hover: #2ea043;
+            --danger: #f85149;
+            --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+            color: var(--primary);
+            transition: color 0.2s;
+        }
+
+        a:hover {
+            color: var(--primary-hover);
+        }
+
+        /* ================= 导航栏 ================= */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(13, 17, 23, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            font-size: 14px;
+        }
+
+        /* ================= 英雄区 (Hero) ================= */
+        .hero {
+            padding: 160px 24px 100px;
+            text-align: center;
+            position: relative;
+        }
+
+        /* 背景光效 */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(88, 166, 255, 0.15) 0%, rgba(13, 17, 23, 0) 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            color: #fff;
+            margin-bottom: 24px;
+            letter-spacing: -1px;
+            line-height: 1.2;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(90deg, var(--primary), #a371f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--success);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(35, 134, 54, 0.3);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--success-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46, 160, 67, 0.4);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            margin-left: 16px;
+        }
+
+        .btn-outline:hover {
+            background-color: var(--bg-surface);
+            border-color: var(--text-muted);
+        }
+
+        .hero-meta {
+            margin-top: 24px;
+            font-size: 14px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        /* ================= 通用区块 ================= */
+        .section {
+            padding: 100px 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-header h2 {
+            font-size: 36px;
+            color: #fff;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            font-size: 18px;
+            color: var(--text-muted);
+        }
+
+        /* ================= 特性卡片 ================= */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(88, 166, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            font-size: 15px;
+            color: var(--text-muted);
+        }
+
+        /* ================= 使用步骤 ================= */
+        .steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .step {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            background: var(--bg-surface);
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .step-num {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 {
+            font-size: 18px;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .step-content p {
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        /* ================= FAQ ================= */
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .faq-item {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 20px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card);
+        }
+
+        .faq-question:hover {
+            background: var(--bg-surface);
+        }
+
+        .faq-answer {
+            padding: 0 20px 20px;
+            color: var(--text-muted);
+            font-size: 15px;
+            display: none;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+        }
+
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+
+        .faq-item.active .faq-question {
+            color: var(--primary);
+        }
+
+        /* ================= 强调警示框 ================= */
+        .alert-box {
+            background: rgba(248, 81, 73, 0.1);
+            border-left: 4px solid var(--danger);
+            padding: 20px;
+            border-radius: 4px;
+            margin-top: 16px;
+            color: var(--text-main);
+        }
+
+        .alert-box strong {
+            color: var(--danger);
+        }
+
+        /* ================= 页脚 ================= */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 40px 24px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+            background: var(--bg-surface);
+        }
+
+        /* ================= 响应式 ================= */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 36px; }
+            .hero p { font-size: 16px; }
+            .nav-links { display: none; } /* 手机端隐藏导航链接 */
+            .step { flex-direction: column; gap: 16px; }
+            .btn-outline { margin: 16px 0 0 0; display: flex; width: 100%; }
+            .btn-primary { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 导航栏 -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">
+                🛡️ Secure<span>Vault</span>
+            </div>
+            <div class="nav-links">
+                <a href="#features">核心特性</a>
+                <a href="#how-to-use">使用说明</a>
+                <a href="#faq">常见问题</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 英雄区 -->
+    <section class="hero">
+        <h1>保护隐私的<br><span>本地文件保险库</span></h1>
+        <p>基于 AES-256-GCM 军事级加密算法，纯本地离线运行。您的数据只属于您自己，任何黑客、云服务商甚至开发者本人都无法窃取。</p>
+        
+        <!-- 替换这里为你真实的下载链接 -->
+        <a href="https://github.com/Z23-Z23/v2.0.0/releases/download/untagged-f79c519b9c7a3701b99c/SecureVault.exe" class="btn btn-primary">⬇️ 立即下载 (Windows10/11 64位)</a>
+        <a href="#how-to-use" class="btn btn-outline">了解如何使用</a>
+        
+        <div class="hero-meta">
+            <span>📦 版本 v2.0.0</span>
+            <span>💻 免安装 .NET 环境</span>
+            <span>🔒 开源可审计</span>
+        </div>
+    </section>
+
+    <!-- 核心特性区 -->
+    <section id="features" class="section">
+        <div class="section-header">
+            <h2>为什么选择 SecureVault？</h2>
+            <p>用现代密码学技术，为您的敏感文件提供银行级保护</p>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔐</div>
+                <h3>AES-256-GCM 加密</h3>
+                <p>采用美国政府绝密级别（Top Secret）同款的加密标准，配合 PBKDF2 60万次迭代，暴力破解需要数亿年。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📡</div>
+                <h3>纯本地与零联网</h3>
+                <p>程序没有任何联网代码。所有加密、解密过程完全在您的电脑上完成，彻底杜绝云端泄露风险。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🗑️</div>
+                <h3>防恢复安全删除</h3>
+                <p>将文件拖入保险库后，原文件将被 3 次随机数据覆写彻底粉碎，即使使用数据恢复软件也无法找回。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📦</div>
+                <h3>便携与一键备份</h3>
+                <p>支持将整个加密保险库打包备份。您可以轻松将其迁移到新电脑，或存入 U 盘、移动硬盘中妥善保管。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔌</div>
+                <h3>USB 加密直传</h3>
+                <p>内置 USB 传输模块，支持直接将文件加密导出至 U 盘，或安全解密提取，全过程防止中间人截获。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <h3>防篡改审计日志</h3>
+                <p>每一次文件的添加、提取、删除均被记录在加密日志中。随时了解您的保险库是否被他人动过手脚。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 使用说明区 -->
+    <section id="how-to-use" class="section">
+        <div class="section-header">
+            <h2>三步开启安全之旅</h2>
+            <p>无需任何密码学基础，小白也能轻松上手</p>
+        </div>
+
+        <div class="steps-container">
+            <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-content">
+                    <h3>创建保险库与主密码</h3>
+                    <p>双击运行程序，选择一个文件夹作为保险库位置，并设置一个至少 8 位的强密码。<br>
+                    <strong style="color:var(--danger)">⚠ 注意：密码无法找回！一旦遗忘，里面的文件将永久无法打开，请务必写在安全的地方或使用密码管理器。</strong></p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-content">
+                    <h3>将机密文件拖入保险库</h3>
+                    <p>进入主界面后，点击“添加文件”或直接将机密文件拖拽到窗口中。程序会自动加密并将其打碎后存入保险库，同时销毁您的原始文件。</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-content">
+                    <h3>随时提取或锁定</h3>
+                    <p>需要使用时，选中文件点击“提取”，输入密码即可解密到指定位置。离开电脑前，点击右上角的“锁定”按钮，瞬间切断所有数据访问。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 常见问题区 -->
+    <section id="faq" class="section">
+        <div class="section-header">
+            <h2>常见问题</h2>
+            <p>在下载和使用前，请先阅读以下须知</p>
+        </div>
+
+        <div class="faq-container">
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Windows 提示“未知发布者” / 已被 SmartScreen 阻止怎么办？</span>
+                    <span>▼</span>
+                </div>
+                <div class="faq-answer">
+                    由于本软件是个人开发，未购买每年数千元的微软代码签名证书，Windows 会默认将其标记为“未知应用”。
+                    <div class="alert-box">
+                        <strong>这是正常现象，并非病毒！</strong><br>
+                        解决方法：在弹出的蓝色窗口中，点击 <strong>“更多信息” (More info)</strong>，然后点击右下角出现的 <strong>“仍要运行” (Run anyway)</strong> 即可正常打开。
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>忘记主密码了，能帮我找回吗？</span>
+                    <span>▼</span>
+                </div>
+                <div class="faq-answer">
+                    <strong>非常抱歉，无法找回。</strong><br>
+                    SecureVault 采用真正的军用级零知识加密。程序本身不存储您的密码，只存储一个由密码算出的“密钥指纹”。如果忘记了密码，任何黑客、开发者或超级计算机都无法绕过加密逻辑。
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>我的文件会被上传到网络上吗？</span>
+                    <span>▼</span>
+                </div>
+                <div class="faq-answer">
+                    <strong>绝对不会。</strong> 本软件不仅没有内置任何上传代码，甚至不会请求网络权限。您的文件仅仅存储在您指定的本地文件夹中（通常是一个名为 `vault.meta` 的文件和 `blobs` 文件夹）。您甚至可以拔掉网线使用它。
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer>
+        <p>© 2026 SecureVault. 保留所有权利。</p>
+        <p style="margin-top: 8px;">Designed for Privacy. Built with AES-256.</p>
+    </footer>
+
+    <!-- 交互脚本 (FAQ 折叠) -->
+    <script>
+        document.querySelectorAll('.faq-question').forEach(item => {
+            item.addEventListener('click', () => {
+                const parent = item.parentElement;
+                // 关闭其他
+                document.querySelectorAll('.faq-item').forEach(i => {
+                    if (i !== parent) i.classList.remove('active');
+                });
+                // 切换当前
+                parent.classList.toggle('active');
+            });
+        });
+    </script>
+</body>
+</html>
